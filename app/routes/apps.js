@@ -1,15 +1,17 @@
 const express                   = require('express')
 const router                    = express.Router()
-const { authentication }  = require('../middleware/auth.middleware')
-const AppDataController       = require('../controllers/apps.controller')
+const { authentication }        = require('../middleware/auth.middleware')
+const AppDataController         = require('../controllers/apps.controller')
 
 router
     .all('/*', authentication)
     .get('/', AppDataController.getAppDataController)
+    .get('/getByID/:ID', AppDataController.getAppByIDController)
+    .post('/crud', AppDataController.postAppDataController)
 
-    // .post('/insert', UsersDataController.postUsersDataController)
-    // .post('/update', UsersDataController.updateUsersDataController)
-    // .post('/delete', UsersDataController.deleteUsersDataController)
-    // .post('/activate', UsersDataController.activateUsersDataController)
+    .get('/mapping', AppDataController.getAppMappingDataController)
+    .get('/mapping/:ID', AppDataController.getAppMappingByIDDataController)
+    .get('/user_app/:PERNR', AppDataController.getAppMappingByPERNRDataController)
+    .post('/mapping/crud', AppDataController.postAppMappingDataController)
 
-module.exports = router
+    module.exports = router
