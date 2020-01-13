@@ -12,7 +12,7 @@ UsersController.login = async(req, res, next) => {
 
     try {
         let {
-            username,
+            email,
             password
         } = req.body
 
@@ -29,8 +29,8 @@ UsersController.login = async(req, res, next) => {
         // if ZTIPE eq L (LDAP) then check userexistLDAP ? generate token
         // else not user LDAP then cek database table ms_it_personal_data and check password encrypt
 
-        let where       = [{ key: 'AD_USERNAME', value: username }]
-        let users_tbl   = await UsersModel.getBy('PERNR, NAME, AD_USERNAME, EMAIL, ZTIPE, ZPASSWORD', where)
+        let where       = [{ key: 'EMAIL', value: email }]
+        let users_tbl   = await UsersModel.getBy('PERNR, NAME, AD_USERNAME, EMAIL, ZTIPE, ZPASSWORD, ZROLE', where)
 
         let token       = ''
 
@@ -53,7 +53,7 @@ UsersController.login = async(req, res, next) => {
             if (ldap != null) {
                 let validatorsRandom = randomstring.generate()
                 let userData         = [{ key: 'VALIDATOR', value : validatorsRandom }]
-                let condition        = [{ key: 'AD_USERNAME', value: users_tbl.AD_USERNAME }]
+                let condition        = [{ key: 'EMAIL', value: users_tbl.EMAIL }]
 
                 if (ldap.Status == '00') {
                     //save validator random
@@ -64,49 +64,67 @@ UsersController.login = async(req, res, next) => {
                         username: users_tbl.AD_USERNAME,
                         email: users_tbl.EMAIL,
                         tipe: users_tbl.ZTIPE,
+                        role: users_tbl.ZROLE,
                         validator: validatorsRandom
                     }
                     token = await generateToken(userObj)
 
                     result = {
-                        token: token,
-                        email: users_tbl.EMAIL,
-                        username: users_tbl.AD_USERNAME,
+                        token:token,
                         pernr: users_tbl.PERNR,
-                        name: users_tbl.NAME
+                        name: users_tbl.NAME,
+                        username: users_tbl.AD_USERNAME,
+                        email: users_tbl.EMAIL,
+                        tipe: users_tbl.ZTIPE,
+                        role: users_tbl.ZROLE,
                     }
                 } else {
                     //check user from manual lookup table on database
                     let options     = [
-                                        { key: 'AD_USERNAME', value: username },
+                                        { key: 'EMAIL', value: email },
                                         { key: 'ZPASSWORD', value: pwdEncrypt }
                                     ]
-                    let userCheck   = await UsersModel.getBy('PERNR, NAME, AD_USERNAME, EMAIL, ZTIPE, ZPASSWORD', options)
+                    let userCheck   = await UsersModel.getBy('PERNR, NAME, AD_USERNAME, EMAIL, IS_ACTIVE, ZTIPE, ZPASSWORD, ZROLE', options)
 
                     if (userCheck.EMAIL !== undefined) {
-                        //save validator random
-                        await UsersModel.save(userData, condition)
-                        // login success
-                        let userObj = {
-                            pernr: userCheck.PERNR,
-                            name: userCheck.NAME,
-                            username: userCheck.AD_USERNAME,
-                            email: userCheck.EMAIL,
-                            tipe: userCheck.ZTIPE,
-                            validator: validatorsRandom
-                        }
-                        token = await generateToken(userObj)
+                        if (userCheck.IS_ACTIVE !== 0) {                           
+                            //save validator random
+                            await UsersModel.save(userData, condition)
+                            // login success
+                            let userObj = {
+                                pernr: users_tbl.PERNR,
+                                name: users_tbl.NAME,
+                                username: users_tbl.AD_USERNAME,
+                                email: users_tbl.EMAIL,
+                                is_active: users_tbl.IS_ACTIVE,
+                                tipe: users_tbl.ZTIPE,
+                                role: users_tbl.ZROLE,
+                                validator: validatorsRandom
+                            }
+        
+                            token = await generateToken(userObj)
 
-                        result = {
-                            token: token,
-                            email: users_tbl.EMAIL,
-                            username: users_tbl.AD_USERNAME,
-                            pernr: users_tbl.PERNR,
-                            name: users_tbl.NAME
+                            result = {
+                                token: token,
+                                pernr: users_tbl.PERNR,
+                                name: users_tbl.NAME,
+                                username: users_tbl.AD_USERNAME,
+                                email: users_tbl.EMAIL,
+                                is_active: users_tbl.IS_ACTIVE,
+                                tipe: users_tbl.ZTIPE,
+                                role: users_tbl.ZROLE,
+                            }
+                        } else {
+                            // login not authorize
+                            statusCode      = 200
+                            responseCode    = '45'
+                            message         = 'Login Not Authorized, Account Is Nonactive'
+                            acknowledge     = false
+                            result          = null                            
                         }
                     } else {
                         // login not authorize
-                        statusCode      = 400
+                        statusCode      = 200
                         responseCode    = '05'
                         message         = 'Login Not Authorized, Password Incorrect'
                         acknowledge     = false
@@ -115,7 +133,7 @@ UsersController.login = async(req, res, next) => {
                 }
             } else {
                 // return LDAP Service null
-                statusCode      = 400
+                statusCode      = 200
                 responseCode    = '99'
                 message         = 'Error return response LDAP Service'
                 acknowledge     = false
@@ -123,8 +141,8 @@ UsersController.login = async(req, res, next) => {
             }
         } else {
             // login not authorize
-            statusCode      = 400
-            responseCode    = '05'
+            statusCode      = 200
+            responseCode    = '55'
             message         = 'Login Not Authorized, User not exist'
             acknowledge     = false
             result          = null
@@ -150,6 +168,7 @@ UsersController.getUserDetail = async (req, res, next) => {
         let options     = [
             { key: 'EMAIL', value: email }
         ]
+
         let userCheck   = await UsersModel.getBy('*', options)
 
         // return response

@@ -55,7 +55,7 @@ UsersDataController.postUsersDataController = async(req, res, next) => {
 
     try {
 
-        let { personal_number, name, ad_username, email, zpassword } = req.body
+        let { personal_number, name, ad_username, email, zpassword, role } = req.body
 
         let max = await UsersDataModel.QueryCustom('SELECT MAX(ASSIGNMENT_NUMBER) AS a FROM ms_it_personal_data');
         let value =  max.rows[0];
@@ -78,7 +78,7 @@ UsersDataController.postUsersDataController = async(req, res, next) => {
             {key : 'IS_ACTIVE', value : is_active},
             {key : 'ZTIPE', value : ztipe},
             {key : 'ZPASSWORD', value : pwdEncrypt},
-            // {key : 'ZROLE', value : ""},
+            {key : 'ZROLE', value : role},
             // {key : 'ZUSER_EXPIRY', value : ""},
             // {key : 'VALIDATOR', value : ""}
         ]
@@ -105,13 +105,14 @@ UsersDataController.updateUsersDataController = async(req, res, next) => {
     console.log(`├── ${log} :: Post Users Data Controller`);
 
     try {
-        let { personal_number, name, ad_username, email, assignment_number } = req.body
+        let { personal_number, name, ad_username, email,role, assignment_number } = req.body
         let where       = [{ key: 'PERNR', value: personal_number }, { key: 'ASSIGNMENT_NUMBER', value: assignment_number }]
 
         let data = [
             {key : 'NAME', value : name},
             {key : 'AD_USERNAME', value : ad_username},
             {key : 'EMAIL', value : email},
+            {key : 'ZROLE', value : role},
         ]
 
         let update =  await UsersDataModel.save(data, where);

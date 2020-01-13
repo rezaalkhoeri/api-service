@@ -32,7 +32,7 @@ AppDataController.getAppByIDController = async(req, res, next) => {
         let id = req.params.ID
         let where = [{ key: 'ID', value: id }]
 
-        let sql = await AppDataModel.getBy('*', where)
+        let sql = await AppDataModel.getAll('*', where)
 
         // success
         res.status(200).send(
@@ -123,7 +123,7 @@ AppDataController.getAppMappingDataController = async(req, res, next) => {
 
     try{
         let query = `SELECT user_mapping.ID, ms_it_personal_data.PERNR, ms_it_personal_data.NAME, ms_it_personal_data.AD_USERNAME,
-        ms_it_personal_data.EMAIL, ms_apps.appsname, ms_apps.Deskripsi, ms_apps.url
+        ms_it_personal_data.EMAIL, ms_apps.appsname, ms_apps.Deskripsi, ms_apps.url, user_mapping.STATUS
         FROM user_mapping 
         LEFT JOIN ms_it_personal_data ON ms_it_personal_data.PERNR = user_mapping.PERNR
         LEFT JOIN ms_apps ON ms_apps.ID = user_mapping.APPSID
