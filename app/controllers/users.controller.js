@@ -7,6 +7,144 @@ const { generateToken, encryptPassword }    = require('../lib/jwt')
 const partnersApi                           = require('../helpers/partner-api')
 const log                                   = 'User controller'
 
+const nJwt                  = require('njwt')
+
+UsersController.validation = async(req, res, next) => {
+    console.log(`├── ${log} :: User Validation`);
+
+    try {
+        let {
+            key
+        } = req.body
+
+
+        let statusCode      = 200
+        let responseCode    = 00
+        let message         = 'Validation Success'
+        let acknowledge     = true
+        let result          = null
+
+        if (key) {
+            await nJwt.verify(key, CONFIG.TOKEN_SECRET, function(err, verifiedToken) {
+                if(err){
+                    res.status(200).send(
+                        parseResponse(false, [], '90', `Error Verify JWT : ${err}`)
+                    )
+                }else{
+                    const jsonToken = JSON.stringify(verifiedToken)
+                    req.currentUser = JSON.parse(jsonToken)
+                    username        = req.currentUser.body.username
+                    validator       = req.currentUser.body.validator
+                }
+            })
+
+            let options     = [
+                { key: 'AD_USERNAME', value: username },
+                { key: 'VALIDATOR', value: validator }
+            ]
+
+            let userCheck   = await UsersModel.getBy('*', options)
+
+            if (userCheck.EMAIL !== undefined) {
+                let userObj = {
+                    pernr: userCheck.PERNR,
+                    name: userCheck.NAME,
+                    username: userCheck.AD_USERNAME,
+                    email: userCheck.EMAIL,
+                    tipe: userCheck.ZTIPE,
+                    role: userCheck.ZROLE
+                    //validator: validatorsRandom
+                }
+                token = await generateToken(userObj)
+
+                result = {
+                    token:token,
+                    pernr: userCheck.PERNR,
+                    name: userCheck.NAME,
+                    username: userCheck.AD_USERNAME,
+                    email: userCheck.EMAIL,
+                    tipe: userCheck.ZTIPE,
+                    role: userCheck.ZROLE,
+                }
+
+                res.status(statusCode).send(
+                    parseResponse(acknowledge, result, responseCode, message)
+                )
+            } else {
+                res.status(200).send(
+                    parseResponse(false, [], '10', 'Token Not Valid')
+                )
+            }
+
+        }else{
+            res.status(200).send(
+                parseResponse(false, [], '99', 'There is Authentication Token not given')
+            )
+        }
+
+    } catch (error) {
+        console.log('Error exception :' + error)
+        let resp = parseResponse(false, null, '99', error)
+        next({
+            resp,
+            status: 500
+        })
+    }
+}
+
+UsersController.logout = async(req, res, next) => {
+    console.log(`├── ${log} :: User Logout`);
+
+    try {
+        let {
+            key
+        } = req.body
+
+        let statusCode      = 200
+        let responseCode    = 00
+        let message         = 'Logout Success'
+        let acknowledge     = true
+        let result          = null
+
+        let username        = ""
+
+        if (key) {
+            await nJwt.verify(key, CONFIG.TOKEN_SECRET, function(err, verifiedToken) {
+                if(err){
+                    res.status(200).send(
+                        parseResponse(false, [], '90', `Error Verify JWT : ${err}`)
+                    )
+                }else{
+                    const jsonToken = JSON.stringify(verifiedToken)
+                    req.currentUser = JSON.parse(jsonToken)
+                    email        = req.currentUser.body.email
+                }
+            })
+
+            let userData         = [{ key: 'VALIDATOR', value : "RESET" }]
+            let condition        = [{ key: 'EMAIL', value: email }]
+                
+            await UsersModel.save(userData, condition)
+
+            res.status(statusCode).send(
+                parseResponse(acknowledge, result, responseCode, message)
+            )
+        }else{
+            res.status(200).send(
+                parseResponse(false, [], '99', 'There is Authentication Token not given')
+            )
+        }
+
+    } catch (error) {
+        console.log('Error exception :' + error)
+        let resp = parseResponse(false, null, '99', error)
+        next({
+            resp,
+            status: 500
+        })
+    }
+}
+
 UsersController.login = async(req, res, next) => {
     console.log(`├── ${log} :: Login User and Generate Token`);
 
@@ -17,7 +155,7 @@ UsersController.login = async(req, res, next) => {
         } = req.body
 
         let statusCode      = 200
-        let responseCode    = 00
+        let responseCode    = "00"
         let message         = 'Login Success'
         let acknowledge     = true
         let result          = null
@@ -49,7 +187,8 @@ UsersController.login = async(req, res, next) => {
             }
 
             const ldap = await rp(options)
-
+            console.log('ldap')
+            console.log(ldap)
             if (ldap != null) {
                 let validatorsRandom = randomstring.generate()
                 let userData         = [{ key: 'VALIDATOR', value : validatorsRandom }]
@@ -69,6 +208,8 @@ UsersController.login = async(req, res, next) => {
                     }
                     token = await generateToken(userObj)
 
+                    
+                    
                     result = {
                         token:token,
                         pernr: users_tbl.PERNR,
