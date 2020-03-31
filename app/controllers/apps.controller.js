@@ -203,6 +203,49 @@ AppDataController.getAppMappingByPERNRDataController = async(req, res, next) => 
     }
 }
 
+AppDataController.getAppAllowMapping = async(req, res, next) => {
+    console.log(`├── ${log} :: Get Allowed Application Mapping Data By Token`);
+
+    try{
+        let pernr = req.currentPernr
+        console.log(pernr)
+
+        let statusCode      = 200
+        let responseCode    = 00
+        let message         = 'Get Application Mapping Data By Nopeg Success'
+        let acknowledge     = true
+        let result          = null
+
+        if (pernr !== undefined) {
+                
+            let query = `SELECT user_mapping.ID, ms_it_personal_data.PERNR, ms_it_personal_data.NAME, ms_it_personal_data.AD_USERNAME,
+                ms_it_personal_data.EMAIL, ms_apps.appsname, ms_apps.Deskripsi, ms_apps.url
+                FROM user_mapping 
+                LEFT JOIN ms_it_personal_data ON ms_it_personal_data.PERNR = user_mapping.PERNR
+                LEFT JOIN ms_apps ON ms_apps.ID = user_mapping.APPSID 
+                WHERE user_mapping.PERNR =` + pernr
+
+                let sql = await AppMappingDataModel.QueryCustom(query)
+
+                // success
+                res.status(statusCode).send(
+                    parseResponse(acknowledge, sql, responseCode, message)
+                )
+        } else {
+            res.status(statusCode).send(
+                parseResponse(false, [], '10', 'Data PERNR not found')
+            )
+        }
+    } catch(error) {
+        console.log('Error exception :' + error)
+        let resp = parseResponse(false, null, '99', error)
+        next({
+            resp,
+            status: 500
+        })
+    }
+}
+
 AppDataController.postAppMappingDataController = async(req, res, next) => {
     console.log(`├── ${log} :: Post Application Mapping Data Controller`);
 

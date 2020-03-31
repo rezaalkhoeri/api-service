@@ -31,6 +31,7 @@ AuthMiddleware.authentication = async (req, res, next) => {
                     req.currentUser = JSON.parse(jsonToken)
                     username        = req.currentUser.body.username
                     validator       = req.currentUser.body.validator
+                    pernr           = req.currentUser.body.pernr
                 }
             })
 
@@ -42,6 +43,8 @@ AuthMiddleware.authentication = async (req, res, next) => {
             let userCheck   = await UsersModel.getBy('*', options)
 
             if (userCheck.EMAIL !== undefined) {
+                req.currentUser     = username
+                req.currentPernr    = pernr
                 next()
             } else {
                 res.status(200).send(

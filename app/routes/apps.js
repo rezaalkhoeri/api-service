@@ -11,6 +11,7 @@ router
 
     .get('/mapping', AppDataController.getAppMappingDataController)
     .get('/mapping/:ID', AppDataController.getAppMappingByIDDataController)
+    .post('/allowed', AppDataController.getAppAllowMapping)
     .get('/user_app/:PERNR', AppDataController.getAppMappingByPERNRDataController)
     .post('/mapping/crud', AppDataController.postAppMappingDataController)
 
