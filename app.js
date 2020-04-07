@@ -19,7 +19,7 @@ const swaggerUi     = require('swagger-ui-express')
 const YAML          = require('yamljs')
 const usersSwagger  = YAML.load(process.cwd() + '/app/apidocs-documents/users.yaml')
 
-const expiredTime   = 7*24*60*60*1000; //7 hari
+const expiredTime   = 1*24*60*60*1000; //7 hari
 
 app.use(yes())
 

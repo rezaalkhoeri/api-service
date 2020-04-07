@@ -28,7 +28,7 @@ jwt.generateToken = function(userObject) {
         try {
             console.log(`|-- ${log} : Generate Token JWT`)
             let jwt = nJwt.create(userObject, CONFIG.TOKEN_SECRET)
-            jwt.setExpiration(new Date().getTime() + CONFIG.TOKEN_EXPIRATION)
+            jwt.setExpiration(new Date().getTime() + (5*CONFIG.TOKEN_EXPIRATION))
 
             let token = jwt.compact()
             resolve(token)
